@@ -1,10 +1,12 @@
 import asyncio, schedule, time, feedparser, os
 import yfinance as yf
+import pytz
 from telegram import Bot
 from datetime import datetime
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN', '여기에_봇_토큰_입력')
 CHAT_ID   = os.environ.get('CHAT_ID', '여기에_채팅ID_입력')
+KR_TZ = pytz.timezone('Asia/Seoul')
 
 KR_STOCKS = {'005930.KS': '삼성전자', '000660.KS': 'SK하이닉스'}
 US_STOCKS = ['AAPL', 'NVDA', 'SPY']
@@ -12,7 +14,7 @@ US_STOCKS = ['AAPL', 'NVDA', 'SPY']
 def get_price(ticker):
     try:
         t = yf.Ticker(ticker)
-        hist = t.history(period='2d')
+        hist = t.history(period='5d')
         if len(hist) >= 2:
             price = hist['Close'].iloc[-1]
             prev  = hist['Close'].iloc[-2]
@@ -26,7 +28,8 @@ def get_price(ticker):
 
 async def send_newsletter():
     bot = Bot(BOT_TOKEN)
-    today = datetime.now().strftime('%Y.%m.%d')
+    today = datetime.now(KR_TZ).strftime('%Y.%m.%d')
+    weekday = datetime.now(KR_TZ).strftime('%A')
     msg = '📊 *오늘의 시장 브리핑* (' + today + ')\n\n'
     msg += '🇰🇷 *국내 시장*\n'
     for ticker, name in KR_STOCKS.items():
@@ -58,14 +61,14 @@ async def send_newsletter():
     except:
         pass
     await bot.send_message(chat_id=CHAT_ID, text=msg, parse_mode='Markdown')
-    print('✅ 발송 완료: ' + str(datetime.now()))
+    print('✅ 발송 완료: ' + str(datetime.now(KR_TZ)))
 
 def job():
     asyncio.run(send_newsletter())
 
 schedule.every().day.at('08:00').do(job)
-print('🤖 봇 시작됨! 매일 오전 8시에 발송됩니다.')
+print('🤖 봇 시작됨! 매일 한국시간 오전 8시에 발송됩니다.')
 job()
 while True:
     schedule.run_pending()
-    import time; time.sleep(60)
+    time.sleep(60)
