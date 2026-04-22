@@ -1,0 +1,7 @@
+# python-telegram-bot==20.7
+
+python-telegram-bot==20.7 
+yfinance==0.2.36 
+pykrx==1.0.45 
+feedparser==6.0.11 
+schedule==1.2.1
