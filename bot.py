@@ -62,7 +62,7 @@ async def send_newsletter():
             msg += '  ' + ticker + ': 데이터 없음\n'
     msg += '\n📰 *주요 뉴스*\n'
     try:
-        feed = feedparser.parse('https://feeds.finance.yahoo.com/rss/2.0/headline')
+        feed = feedparser.parse('https://feeds.reuters.com/reuters/businessNews')
         for entry in feed.entries[:3]:
             msg += '  • ' + entry.title[:40] + '...\n'
     except:
