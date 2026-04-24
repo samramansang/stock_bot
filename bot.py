@@ -14,6 +14,7 @@ US_STOCKS = ['AAPL', 'NVDA', 'SPY']
 
 def get_price_us(ticker):
     try:
+        time.sleep(15)
         url = 'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=' + ticker + '&apikey=' + ALPHA_KEY
         r = requests.get(url).json()
         print('US 응답:' + str(r)[:100])
@@ -27,6 +28,7 @@ def get_price_us(ticker):
 
 def get_price_kr(ticker):
     try:
+        time.sleep(15)
         url = 'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=' + ticker + '.KS&apikey=' + ALPHA_KEY
         r = requests.get(url).json()
         print('KR 응답:' + str(r)[:100])
