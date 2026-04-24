@@ -14,7 +14,7 @@ US_STOCKS = ['AAPL', 'NVDA', 'SPY']
 def get_price(ticker):
     try:
         t = yf.Ticker(ticker)
-        hist = t.history(period='5d')
+        hist = t.history(period='1mo')
         if len(hist) >= 2:
             price = hist['Close'].iloc[-1]
             prev  = hist['Close'].iloc[-2]
