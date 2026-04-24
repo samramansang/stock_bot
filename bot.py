@@ -1,39 +1,45 @@
-import asyncio, schedule, time, feedparser, os
-import yfinance as yf
+import asyncio, schedule, time, feedparser, os, requests
 import pytz
 from telegram import Bot
 from datetime import datetime
 
-BOT_TOKEN = os.environ.get('BOT_TOKEN', '여기에_봇_토큰_입력')
-CHAT_ID   = os.environ.get('CHAT_ID', '여기에_채팅ID_입력')
+BOT_TOKEN = os.environ.get('BOT_TOKEN', '')
+CHAT_ID   = os.environ.get('CHAT_ID', '')
+ALPHA_KEY = os.environ.get('ALPHA_KEY', '')
 KR_TZ = pytz.timezone('Asia/Seoul')
 
-KR_STOCKS = {'005930.KS': '삼성전자', '000660.KS': 'SK하이닉스'}
+KR_STOCKS = {'005930': '삼성전자', '000660': 'SK하이닉스'}
 US_STOCKS = ['AAPL', 'NVDA', 'SPY']
 
-def get_price(ticker):
+def get_price_us(ticker):
     try:
-        t = yf.Ticker(ticker)
-        hist = t.history(period='1mo')
-        if len(hist) >= 2:
-            price = hist['Close'].iloc[-1]
-            prev  = hist['Close'].iloc[-2]
-            change = (price - prev) / prev * 100
-            return price, change
-        elif len(hist) == 1:
-            return hist['Close'].iloc[0], 0
+        url = f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={ticker}&apikey={ALPHA_KEY}'
+        r = requests.get(url).json()
+        q = r['Global Quote']
+        price = float(q['05. price'])
+        change = float(q['10. change percent'].replace('%',''))
+        return price, change
     except:
-        pass
-    return None, None
+        return None, None
+
+def get_price_kr(ticker):
+    try:
+        url = f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={ticker}.KS&apikey={ALPHA_KEY}'
+        r = requests.get(url).json()
+        q = r['Global Quote']
+        price = float(q['05. price'])
+        change = float(q['10. change percent'].replace('%',''))
+        return price, change
+    except:
+        return None, None
 
 async def send_newsletter():
     bot = Bot(BOT_TOKEN)
     today = datetime.now(KR_TZ).strftime('%Y.%m.%d')
-    weekday = datetime.now(KR_TZ).strftime('%A')
     msg = '📊 *오늘의 시장 브리핑* (' + today + ')\n\n'
     msg += '🇰🇷 *국내 시장*\n'
     for ticker, name in KR_STOCKS.items():
-        price, change = get_price(ticker)
+        price, change = get_price_kr(ticker)
         if price:
             arrow = '▲' if change > 0 else '▼'
             msg += '  ' + name + ': ' + format(price, ',.0f') + '원 ' + arrow + format(abs(change), '.1f') + '%\n'
@@ -41,18 +47,12 @@ async def send_newsletter():
             msg += '  ' + name + ': 데이터 없음\n'
     msg += '\n🇺🇸 *미국 시장*\n'
     for ticker in US_STOCKS:
-        price, change = get_price(ticker)
+        price, change = get_price_us(ticker)
         if price:
             arrow = '▲' if change > 0 else '▼'
             msg += '  ' + ticker + ': $' + format(price, '.1f') + ' ' + arrow + format(abs(change), '.1f') + '%\n'
         else:
             msg += '  ' + ticker + ': 데이터 없음\n'
-    try:
-        price, _ = get_price('USDKRW=X')
-        if price:
-            msg += '\n💱 달러/원: ' + format(price, '.0f') + '원\n'
-    except:
-        pass
     msg += '\n📰 *주요 뉴스*\n'
     try:
         feed = feedparser.parse('https://feeds.finance.yahoo.com/rss/2.0/headline')
