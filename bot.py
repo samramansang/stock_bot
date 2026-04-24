@@ -7,30 +7,35 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN', '')
 CHAT_ID   = os.environ.get('CHAT_ID', '')
 ALPHA_KEY = os.environ.get('ALPHA_KEY', '')
 KR_TZ = pytz.timezone('Asia/Seoul')
+print('ALPHA_KEY 확인:' + ALPHA_KEY[:5] + '...')
 
 KR_STOCKS = {'005930': '삼성전자', '000660': 'SK하이닉스'}
 US_STOCKS = ['AAPL', 'NVDA', 'SPY']
 
 def get_price_us(ticker):
     try:
-        url = f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={ticker}&apikey={ALPHA_KEY}'
+        url = 'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=' + ticker + '&apikey=' + ALPHA_KEY
         r = requests.get(url).json()
+        print('US 응답:' + str(r)[:100])
         q = r['Global Quote']
         price = float(q['05. price'])
         change = float(q['10. change percent'].replace('%',''))
         return price, change
-    except:
+    except Exception as e:
+        print('US 오류:' + str(e))
         return None, None
 
 def get_price_kr(ticker):
     try:
-        url = f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={ticker}.KS&apikey={ALPHA_KEY}'
+        url = 'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=' + ticker + '.KS&apikey=' + ALPHA_KEY
         r = requests.get(url).json()
+        print('KR 응답:' + str(r)[:100])
         q = r['Global Quote']
         price = float(q['05. price'])
         change = float(q['10. change percent'].replace('%',''))
         return price, change
-    except:
+    except Exception as e:
+        print('KR 오류:' + str(e))
         return None, None
 
 async def send_newsletter():
