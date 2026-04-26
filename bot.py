@@ -19,7 +19,7 @@ def get_price_kr(code):
         r = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(r.text, 'html.parser')
         price = soup.select_one('.no_today .blind')
-        change = soup.select_one('.no_exday .blind')
+        change = soup.select_one('.no_exday em .blind')
         if price and change:
             p = float(price.text.replace(',',''))
             c = float(change.text.replace(',','').replace('%',''))
@@ -45,8 +45,9 @@ def get_price_us(ticker):
 
 def get_news():
     urls = [
+        'https://www.yonhapnewstv.co.kr/browse/feed/',
+        'https://rss.joins.com/joins_economy_list.xml',
         'https://feeds.bbci.co.uk/news/business/rss.xml',
-        'https://rss.cnn.com/rss/money_latest.rss',
     ]
     for url in urls:
         try:
@@ -81,7 +82,7 @@ async def send_newsletter():
     news = get_news()
     if news:
         for entry in news:
-            msg += '  • ' + entry.title[:35] + '\n'
+            msg += '  • ' + entry.title + '\n'
     else:
         msg += '  뉴스 없음\n'
     await bot.send_message(chat_id=CHAT_ID, text=msg, parse_mode='Markdown')
