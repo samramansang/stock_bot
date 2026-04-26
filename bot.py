@@ -9,29 +9,19 @@ CHAT_ID   = os.environ.get("CHAT_ID", "")
 KR_TZ = pytz.timezone("Asia/Seoul")
 
 KR_STOCKS = {
-    "005930": "삼성전자",
-    "000660": "SK하이닉스",
-    "373220": "LG에너지솔루션",
-    "207940": "삼성바이오로직스",
-    "005380": "현대차",
-    "000270": "기아",
-    "068270": "셀트리온",
-    "005490": "POSCO홀딩스",
-    "006400": "삼성SDI",
-    "105560": "KB금융",
+    "005930": "삼성전자", "000660": "SK하이닉스",
+    "373220": "LG에너지솔루션", "207940": "삼성바이오로직스",
+    "005380": "현대차", "000270": "기아",
+    "068270": "셀트리온", "005490": "POSCO홀딩스",
+    "006400": "삼성SDI", "105560": "KB금융",
 }
 
 US_STOCKS = {
-    "AAPL": "애플",
-    "MSFT": "마이크로소프트",
-    "NVDA": "엔비디아",
-    "AMZN": "아마존",
-    "META": "메타",
-    "GOOGL": "구글",
-    "TSLA": "테슬라",
-    "AVGO": "브로드컴",
-    "COST": "코스트코",
-    "NFLX": "넷플릭스",
+    "AAPL": "애플", "MSFT": "마이크로소프트",
+    "NVDA": "엔비디아", "AMZN": "아마존",
+    "META": "메타", "GOOGL": "구글",
+    "TSLA": "테슬라", "AVGO": "브로드컴",
+    "COST": "코스트코", "NFLX": "넷플릭스",
 }
 
 def get_price_kr(code):
@@ -40,11 +30,10 @@ def get_price_kr(code):
         headers = {"User-Agent": "Mozilla/5.0"}
         r = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(r.text, "html.parser")
-        price_tag = soup.select_one("p.no_today span.blind")
-        rate_tag = soup.select_one("p.no_exday em span.blind")
-        if price_tag and rate_tag:
-            p = float(price_tag.text.replace(",",""))
-            c = float(rate_tag.text.replace(",","").replace("%",""))
+        tags = soup.select(".no_today .blind, .no_exday .blind")
+        if len(tags) >= 3:
+            p = float(tags[0].text.replace(",",""))
+            c = float(tags[2].text.replace(",","").replace("%",""))
             return p, c
     except Exception as e:
         print("KR오류:" + str(e))
@@ -52,15 +41,14 @@ def get_price_kr(code):
 
 def get_price_us(ticker):
     try:
-        url = "https://finance.naver.com/world/item.naver?symbol=" + ticker + "&fdtc=0"
+        url = "https://finance.naver.com/item/main.naver?code=" + ticker + "&fdtc=0"
         headers = {"User-Agent": "Mozilla/5.0"}
         r = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(r.text, "html.parser")
-        price_tag = soup.select_one(".rate_info .point")
-        change_tag = soup.select_one(".rate_info .change")
-        if price_tag and change_tag:
-            p = float(price_tag.text.replace(",",""))
-            c = float(change_tag.text.replace(",","").replace("%","").strip())
+        tags = soup.select(".no_today .blind, .no_exday .blind")
+        if len(tags) >= 3:
+            p = float(tags[0].text.replace(",",""))
+            c = float(tags[2].text.replace(",","").replace("%",""))
             return p, c
     except Exception as e:
         print("US오류:" + str(e))
@@ -70,7 +58,7 @@ def get_news():
     urls = [
         "https://www.yonhapnewstv.co.kr/browse/feed/",
         "https://rss.joins.com/joins_economy_list.xml",
-        "https://feeds.bbci.co.uk/news/business/rss.xml",
+        "https://rss.etnews.com/Section901.xml",
     ]
     result = []
     for url in urls:
