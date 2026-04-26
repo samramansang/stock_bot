@@ -81,7 +81,7 @@ async def send_newsletter():
     news = get_news()
     if news:
         for entry in news:
-            msg += '  • ' + entry.title[:45] + '\n'
+            msg += '  • ' + entry.title[:35] + '\n'
     else:
         msg += '  뉴스 없음\n'
     await bot.send_message(chat_id=CHAT_ID, text=msg, parse_mode='Markdown')
