@@ -41,15 +41,14 @@ def get_price_kr(code):
 
 def get_price_us(ticker):
     try:
-        url = "https://finance.naver.com/item/main.naver?code=" + ticker + "&fdtc=0"
+        url = "https://query1.finance.yahoo.com/v8/finance/chart/" + ticker + "?interval=1d&range=2d"
         headers = {"User-Agent": "Mozilla/5.0"}
-        r = requests.get(url, headers=headers, timeout=10)
-        soup = BeautifulSoup(r.text, "html.parser")
-        tags = soup.select(".no_today .blind, .no_exday .blind")
-        if len(tags) >= 3:
-            p = float(tags[0].text.replace(",",""))
-            c = float(tags[2].text.replace(",","").replace("%",""))
-            return p, c
+        r = requests.get(url, headers=headers, timeout=10).json()
+        meta = r["chart"]["result"][0]["meta"]
+        price = meta["regularMarketPrice"]
+        prev = meta.get("chartPreviousClose", meta.get("regularMarketPreviousClose", 0))
+        change = (price - prev) / prev * 100
+        return price, change
     except Exception as e:
         print("US오류:" + str(e))
     return None, None
