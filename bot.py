@@ -9,8 +9,20 @@ CHAT_ID   = os.environ.get('CHAT_ID', '')
 ALPHA_KEY = os.environ.get('ALPHA_KEY', '')
 KR_TZ = pytz.timezone('Asia/Seoul')
 
-KR_STOCKS = {'005930': '삼성전자', '000660': 'SK하이닉스'}
-US_STOCKS = ['AAPL', 'NVDA', 'SPY']
+KR_STOCKS = {
+    '005930': '삼성전자',
+    '000660': 'SK하이닉스',
+    '373220': 'LG에너지솔루션',
+    '207940': '삼성바이오로직스',
+    '005380': '현대차',
+    '000270': '기아',
+    '068270': '셀트리온',
+    '005490': 'POSCO홀딩스',
+    '006400': '삼성SDI',
+    '105560': 'KB금융',
+}
+
+US_STOCKS = ['AAPL','MSFT','NVDA','AMZN','META','GOOGL','TSLA','AVGO','COST','NFLX']
 
 def get_price_kr(code):
     try:
@@ -18,11 +30,11 @@ def get_price_kr(code):
         headers = {'User-Agent': 'Mozilla/5.0'}
         r = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(r.text, 'html.parser')
-        price = soup.select_one('.no_today .blind')
-        change = soup.select_one('.no_exday em .blind')
-        if price and change:
-            p = float(price.text.replace(',',''))
-            c = float(change.text.replace(',','').replace('%',''))
+        price_tag = soup.select_one('p.no_today span.blind')
+        rate_tag = soup.select_one('p.no_exday em span.blind')
+        if price_tag and rate_tag:
+            p = float(price_tag.text.replace(',',''))
+            c = float(rate_tag.text.replace(',','').replace('%',''))
             return p, c
     except Exception as e:
         print('KR오류:' + str(e))
@@ -49,20 +61,21 @@ def get_news():
         'https://rss.joins.com/joins_economy_list.xml',
         'https://feeds.bbci.co.uk/news/business/rss.xml',
     ]
+    result = []
     for url in urls:
         try:
             feed = feedparser.parse(url)
             if feed.entries:
-                return feed.entries[:3]
+                result.extend(feed.entries[:4])
         except:
             continue
-    return []
+    return result[:10]
 
 async def send_newsletter():
     bot = Bot(BOT_TOKEN)
     today = datetime.now(KR_TZ).strftime('%Y.%m.%d')
     msg = '📊 *오늘의 시장 브리핑* (' + today + ')\n\n'
-    msg += '🇰🇷 *국내 시장*\n'
+    msg += '🇰🇷 *코스피 시총 TOP 10*\n'
     for code, name in KR_STOCKS.items():
         price, change = get_price_kr(code)
         if price:
@@ -70,7 +83,7 @@ async def send_newsletter():
             msg += '  ' + name + ': ' + format(price, ',.0f') + '원 ' + arrow + format(abs(change), '.1f') + '%\n'
         else:
             msg += '  ' + name + ': 데이터 없음\n'
-    msg += '\n🇺🇸 *미국 시장*\n'
+    msg += '\n🇺🇸 *나스닥 시총 TOP 10*\n'
     for ticker in US_STOCKS:
         price, change = get_price_us(ticker)
         if price:
