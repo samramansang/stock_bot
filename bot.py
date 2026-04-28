@@ -104,7 +104,6 @@ def job():
 
 schedule.every().day.at("08:00").do(job)
 print("🤖 봇 시작됨! 매일 한국시간 오전 8시에 발송됩니다.")
-job()
 while True:
     schedule.run_pending()
     time.sleep(60)
