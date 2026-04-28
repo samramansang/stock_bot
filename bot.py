@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 CHAT_ID   = os.environ.get("CHAT_ID", "")
+FINNHUB_KEY = os.environ.get("FINNHUB_KEY", "")
 KR_TZ = pytz.timezone("Asia/Seoul")
 
 KR_STOCKS = {
@@ -26,29 +27,26 @@ US_STOCKS = {
 
 def get_price_kr(code):
     try:
-        url = "https://finance.naver.com/item/main.naver?code=" + code
+        url = "https://m.stock.naver.com/api/stock/" + code + "/basic"
         headers = {"User-Agent": "Mozilla/5.0"}
-        r = requests.get(url, headers=headers, timeout=10)
-        soup = BeautifulSoup(r.text, "html.parser")
-        tags = soup.select(".no_today .blind, .no_exday .blind")
-        if len(tags) >= 3:
-            p = float(tags[0].text.replace(",",""))
-            c = float(tags[2].text.replace(",","").replace("%",""))
-            return p, c
+        r = requests.get(url, headers=headers, timeout=10).json()
+        price = float(r["closePrice"].replace(",",""))
+        change = float(r["compareToPreviousClosePrice"].replace(",",""))
+        change_pct = round(change / (price - change) * 100, 2)
+        return price, change_pct
     except Exception as e:
         print("KR오류:" + str(e))
     return None, None
 
 def get_price_us(ticker):
     try:
-        url = "https://query1.finance.yahoo.com/v8/finance/chart/" + ticker + "?interval=1d&range=2d"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        r = requests.get(url, headers=headers, timeout=10).json()
-        meta = r["chart"]["result"][0]["meta"]
-        price = meta["regularMarketPrice"]
-        prev = meta.get("chartPreviousClose", meta.get("regularMarketPreviousClose", 0))
-        change = (price - prev) / prev * 100
-        return price, change
+        url = "https://finnhub.io/api/v1/quote?symbol=" + ticker + "&token=" + FINNHUB_KEY
+        r = requests.get(url, timeout=10).json()
+        price = r["c"]
+        prev = r["pc"]
+        if price and prev:
+            change = (price - prev) / prev * 100
+            return price, change
     except Exception as e:
         print("US오류:" + str(e))
     return None, None
@@ -78,7 +76,7 @@ async def send_newsletter():
         price, change = get_price_kr(code)
         if price:
             arrow = "▲" if change > 0 else "▼"
-            msg += "  " + name + ": " + format(price, ",.0f") + "원 " + arrow + format(abs(change), ".1f") + "%\n"
+            msg += "  " + name + ": " + format(price, ",.0f") + "원 " + arrow + format(abs(change), ".2f") + "%\n"
         else:
             msg += "  " + name + ": 데이터 없음\n"
     msg += "\n🇺🇸 *나스닥 시총 TOP 10*\n"
